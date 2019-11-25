@@ -2,12 +2,20 @@
     <head>
         <title>Finstagram</title>
     </head>
+    <style>
+        figure {
+            display: inline-block;
+        }
+    </style>
+
     <body>
         <h1>Image Gallery</h1>
         <div>
             {% for image in images %}
-
-            <img src="/image/{{image.filePath}}" width="300"/>
+                <figure>
+                    <img src="image/{{image.filepath}}" width="300" alt="userimage"/>
+                    <figcaption>ID: {{ image.photoID }}, Posted By: {{ image.photoPoster }} on {{ image.postingdate }}</figcaption>
+                </figure>
             {% endfor %}
         </div>
         <a href="/">Go back</a>
