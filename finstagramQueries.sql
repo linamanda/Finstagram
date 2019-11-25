@@ -81,15 +81,15 @@ CREATE TABLE Follow (
 SELECT photoID
 FROM photo AS p1
 WHERE (allFollowers = TRUE
-AND 'TestUser' =
-    (SELECT username_follower
-    FROM follow
-    WHERE username_followed = p1.photoPoster AND username_follower = 'TestUser' AND followStatus = TRUE))
+       AND 'TestUser' =
+       (SELECT username_follower
+        FROM follow
+        WHERE username_followed = p1.photoPoster AND username_follower = 'TestUser' AND followStatus = TRUE))
 OR ('TestUser' IN
     (SELECT member_username
-    FROM belongto
-    WHERE owner_username = p1.photoPoster
-    AND (p1.photoPoster, groupName) IN
-        (SELECT groupOwner, groupName
-        FROM sharedwith
-        WHERE photoID = p1.photoID)))
+     FROM belongto
+     WHERE owner_username = p1.photoPoster
+     AND (p1.photoPoster, groupName) IN
+     (SELECT groupOwner, groupName
+      FROM sharedwith
+      WHERE photoID = p1.photoID)))
