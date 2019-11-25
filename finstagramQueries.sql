@@ -72,8 +72,13 @@ CREATE TABLE Follow (
     FOREIGN KEY(username_follower) REFERENCES Person(username)
 );
 
-#Query to find photoIDs of photos that are visible to the user whose username is TestUser
-SELECT *
+# Query to find photoIDs of photos that are visible to the user whose username is TestUser.
+# A photo is visible to TestUser if...
+#   1. allFollowers == True for the photo and TestUser has been accepted as a follower by the photoPoster OR...
+#   2. the photo is shared with a FriendGroup to which TestUser belongs to where the FriendGroup is identified by its
+#      groupName and groupOwner, the username of the owner of the group.
+
+SELECT photoID
 FROM photo AS p1
 WHERE (allFollowers = TRUE
 AND 'TestUser' =
