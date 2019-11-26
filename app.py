@@ -141,19 +141,17 @@ def upload_image():
 
         requestData = request.form
         captionInput = requestData["captionInput"]
+        allFollowersBool = "0"
 
         if "allFollowersBool" in requestData:
             allFollowersBool = requestData["allFollowersBool"]
 
-            query = "INSERT INTO photo (postingdate, filepath, allFollowers, caption, photoPoster) VALUES (%s, %s, %s, %s, %s)"
-            with connection.cursor() as cursor:
-                cursor.execute(query, (time.strftime('%Y-%m-%d %H:%M:%S'), image_name, allFollowersBool, captionInput, session["username"]))
-        else:
-            friendGroups = requestData.getlist("fgroup")
+        query = "INSERT INTO photo (postingdate, filepath, allFollowers, caption, photoPoster) VALUES (%s, %s, %s, %s, %s)"
+        with connection.cursor() as cursor:
+            cursor.execute(query, (time.strftime('%Y-%m-%d %H:%M:%S'), image_name, allFollowersBool, captionInput, session["username"]))
 
-            query = "INSERT INTO photo (postingdate, filepath, allFollowers, caption, photoPoster) VALUES (%s, %s, %s, %s, %s)"
-            with connection.cursor() as cursor:
-                cursor.execute(query, (time.strftime('%Y-%m-%d %H:%M:%S'), image_name, "0", captionInput, session["username"]))
+        if "fgroup" in requestData:
+            friendGroups = requestData.getlist("fgroup")
 
             query2 = "SELECT LAST_INSERT_ID() FROM photo"
             with connection.cursor() as cursor:

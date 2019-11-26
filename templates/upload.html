@@ -24,28 +24,29 @@
                 </div>
 
                 <label for="allFollowersBool"> All Followers </label>
-                <input type="checkbox" name="allFollowersBool" id = "allFollowersBool" value=1 onclick="disableCheckBoxes()">
+                <input type="checkbox" name="allFollowersBool" id = "allFollowersBool" value=1>
                 <br/>
-
-                <script>
-                    var disableCheckBoxes = function () {
-                        var allFollowerBox = document.getElementById("allFollowersBool");
-                        parentObject = document.getElementById("allfgroups").children;
-                        var i;
-                        if (!allFollowerBox.checked) {
-                            for(i = 0; i < parentObject.length; i++) {
-                                currentCheckbox = parentObject[i];
-                                currentCheckbox.disabled = false;
-                            }
-                        } else {
-                            for(i = 0; i < parentObject.length; i++) {
-                                currentCheckbox = parentObject[i];
-                                currentCheckbox.checked = false;
-                                currentCheckbox.disabled = true;
-                            }
-                        }
-                    }
-                </script>
+                <!-- The following script is to disable the checkboxes for specific friend groups if the all followers
+                     option was selected so that only one or the other could be chosen. -->
+{#                <script>#}
+{#                    var disableCheckBoxes = function () {#}
+{#                        var allFollowerBox = document.getElementById("allFollowersBool");#}
+{#                        parentObject = document.getElementById("allfgroups").children;#}
+{#                        var i;#}
+{#                        if (!allFollowerBox.checked) {#}
+{#                            for(i = 0; i < parentObject.length; i++) {#}
+{#                                currentCheckbox = parentObject[i];#}
+{#                                currentCheckbox.disabled = false;#}
+{#                            }#}
+{#                        } else {#}
+{#                            for(i = 0; i < parentObject.length; i++) {#}
+{#                                currentCheckbox = parentObject[i];#}
+{#                                currentCheckbox.checked = false;#}
+{#                                currentCheckbox.disabled = true;#}
+{#                            }#}
+{#                        }#}
+{#                    }#}
+{#                </script>#}
 
                 <br/>
                 <input type="submit" value="Upload">
