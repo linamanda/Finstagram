@@ -51,11 +51,7 @@ def upload():
 @app.route("/images", methods=["GET"])
 @login_required
 def images():
-    query = "SELECT * FROM photo AS p1 WHERE (allFollowers = TRUE AND %s = (SELECT username_follower FROM follow " \
-            "WHERE username_followed = p1.photoPoster AND username_follower = %s AND followStatus = TRUE)) OR " \
-            "(%s IN (SELECT member_username FROM belongto WHERE owner_username = p1.photoPoster AND " \
-            "(p1.photoPoster, groupName) IN (SELECT groupOwner, groupName FROM sharedwith WHERE photoID = p1.photoID)))" \
-            "ORDER BY postingdate DESC"
+    query = "SELECT * FROM photo AS p1 WHERE (allFollowers = TRUE AND %s = (SELECT username_follower FROM follow WHERE username_followed = p1.photoPoster AND username_follower = %s AND followStatus = TRUE)) OR (%s IN (SELECT member_username FROM belongto WHERE (owner_username, groupName) IN (SELECT groupOwner, groupName FROM sharedwith WHERE photoID = p1.photoID))) ORDER BY postingdate DESC"
     with connection.cursor() as cursor:
         cursor.execute(query, (session["username"], session["username"], session["username"]))
     data = cursor.fetchall()
