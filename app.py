@@ -138,6 +138,46 @@ def likeAuth():
             cursor.execute(query, (session["username"], likeValue[1], time.strftime('%Y-%m-%d %H:%M:%S'), likeValue[0]))
     return images()
 
+@app.route("/friendgroups", methods=["GET"])
+def friendgroups():
+    query = "SELECT * FROM friendgroup WHERE groupOwner = %s"
+    with connection.cursor() as cursor:
+        cursor.execute(query, (session["username"]))
+    friendgroupsData = cursor.fetchall()
+    return render_template("friendgroups.html", groups=friendgroupsData)
+
+@app.route("/friendgroupadd", methods=["POST"])
+def friendgroupadd():
+    if request.form:
+        requestData = request.form
+        friendgroupName = requestData["groupname"]
+        friendgroupDesc = "[No description.]"
+
+        if "groupdesc" in requestData:
+            friendgroupDesc = requestData["groupdesc"]
+
+        try:
+            with connection.cursor() as cursor:
+                query = "INSERT INTO friendgroup VALUES (%s, %s, %s)"
+                cursor.execute(query, (session['username'], friendgroupName, friendgroupDesc))
+        except pymysql.err.IntegrityError:
+            error = "%s is already an existing friend group you created." % (friendgroupName)
+
+            query = "SELECT * FROM friendgroup WHERE groupOwner = %s"
+            with connection.cursor() as cursor:
+                cursor.execute(query, (session["username"]))
+            friendgroupsData = cursor.fetchall()
+
+            return render_template('friendgroups.html', groups=friendgroupsData, error=error)
+
+    query = "SELECT * FROM friendgroup WHERE groupOwner = %s"
+    with connection.cursor() as cursor:
+        cursor.execute(query, (session["username"]))
+    friendgroupsData = cursor.fetchall()
+
+    error = "Friend group successfully created."
+    return render_template("friendgroups.html", groups=friendgroupsData, error=error)
+
 @app.route("/login", methods=["GET"])
 def login():
     return render_template("login.html")
