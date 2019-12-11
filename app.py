@@ -9,6 +9,7 @@ import time
 app = Flask(__name__)
 app.secret_key = "super secret key"
 IMAGES_DIR = os.path.join(os.getcwd(), "images")
+SALT = 'cs3083'
 
 connection = pymysql.connect(host="localhost",
                              user="root",
@@ -51,17 +52,91 @@ def upload():
 @app.route("/images", methods=["GET"])
 @login_required
 def images():
-    query = "SELECT * FROM photo AS p1 WHERE (allFollowers = TRUE AND %s = (SELECT username_follower FROM follow WHERE username_followed = p1.photoPoster AND username_follower = %s AND followStatus = TRUE)) OR (%s IN (SELECT member_username FROM belongto WHERE (owner_username, groupName) IN (SELECT groupOwner, groupName FROM sharedwith WHERE photoID = p1.photoID))) ORDER BY postingdate DESC"
+    query1 = "SELECT * FROM photo AS p1 JOIN person ON (photoPoster = username) WHERE (allFollowers = TRUE AND %s = (SELECT username_follower FROM follow WHERE username_followed = p1.photoPoster AND username_follower = %s AND followStatus = TRUE)) OR (%s IN (SELECT member_username FROM belongto WHERE (owner_username, groupName) IN (SELECT groupOwner, groupName FROM sharedwith WHERE photoID = p1.photoID))) ORDER BY postingdate DESC"
     with connection.cursor() as cursor:
-        cursor.execute(query, (session["username"], session["username"], session["username"]))
-    data = cursor.fetchall()
-    return render_template("images.html", images=data)
+        cursor.execute(query1, (session["username"], session["username"], session["username"]))
+    imgsData = cursor.fetchall()
+
+    query2 = "SELECT photoID, pe2.username AS username, pe2.firstName AS firstName, pe2.lastName AS lastName, t1.tagstatus AS tagstatus FROM photo AS p1 JOIN person AS pe1 ON (photoPoster = pe1.username) JOIN tagged AS t1 USING (photoID) JOIN person AS pe2 ON (t1.username = pe2.username) WHERE p1.photoID IN (SELECT photoID FROM photo AS p1 JOIN person ON (photoPoster = username) WHERE (allFollowers = TRUE AND %s= (SELECT username_follower FROM follow WHERE username_followed = p1.photoPoster AND username_follower = %s AND followStatus = TRUE)) OR (%s IN (SELECT member_username FROM belongto WHERE (owner_username, groupName) IN (SELECT groupOwner, groupName FROM sharedwith WHERE photoID = p1.photoID)))) AND t1.tagstatus = TRUE"
+    with connection.cursor() as cursor:
+        cursor.execute(query2, (session["username"], session["username"], session["username"]))
+    taggedData = cursor.fetchall()
+
+    query3 = "SELECT photoID, l1.username AS username, l1.rating AS rating FROM photo AS p1 JOIN likes AS l1 USING (photoID) WHERE p1.photoID IN (SELECT photoID FROM photo AS p1 JOIN person ON (photoPoster = username) WHERE (allFollowers = TRUE AND %s= (SELECT username_follower FROM follow WHERE username_followed = p1.photoPoster AND username_follower = %s AND followStatus = TRUE)) OR (%s IN (SELECT member_username FROM belongto WHERE (owner_username, groupName) IN (SELECT groupOwner, groupName FROM sharedwith WHERE photoID = p1.photoID))))"
+    with connection.cursor() as cursor:
+        cursor.execute(query3, (session["username"], session["username"], session["username"]))
+    likesData = cursor.fetchall()
+
+    return render_template("images.html", images=imgsData, tags=taggedData, likers=likesData)
 
 @app.route("/image/<image_name>", methods=["GET"])
 def image(image_name):
     image_location = os.path.join(IMAGES_DIR, image_name)
     if os.path.isfile(image_location):
         return send_file(image_location, mimetype="image/jpg")
+
+@app.route("/follow", methods=["GET"])
+def follow():
+    return render_template("follow.html")
+
+@app.route("/followAuth", methods=["POST"])
+def followAuth():
+    requestData = request.form
+    followee = requestData["username"]
+    try:
+        with connection.cursor() as cursor:
+            query = "INSERT INTO follow VALUES ((SELECT username FROM person WHERE username = %s), %s, %s)"
+            cursor.execute(query, (followee, session['username'], "0"))
+    except pymysql.err.IntegrityError:
+        error = "%s cannot be added. Please check your spelling or your following page" % (followee)
+        return render_template('follow.html', error=error)
+
+    error = "A request has been sent to %s." % (followee)
+    return render_template("follow.html", error=error)
+
+@app.route("/followers", methods=["GET"])
+def followers():
+    query1 = "SELECT username_follower AS username, firstName, lastName FROM follow JOIN person ON (username_follower = username) WHERE username_followed = %s AND followstatus = True"
+    with connection.cursor() as cursor:
+        cursor.execute(query1, (session['username']))
+    followerData = cursor.fetchall()
+
+    query2 = "SELECT username_follower AS username, firstName, lastName FROM follow JOIN person ON (username_follower = username) WHERE username_followed = %s AND followstatus = False"
+    with connection.cursor() as cursor:
+        cursor.execute(query2, (session['username']))
+    followerRequestData = cursor.fetchall()
+
+    return render_template("followers.html", followersData=followerData, followRequests=followerRequestData)
+
+@app.route("/followersAuth", methods=["POST"])
+def followersAuth():
+    if request.form:
+        requestData = request.form
+
+        if "followRequestDecision" in requestData:
+            decisions = requestData.getlist("followRequestDecision")
+            for decision in decisions:
+                decisionArr = decision.split("-")
+                if decisionArr[0] == "1":
+                    query = "UPDATE follow SET followstatus = 1 WHERE username_followed = %s AND username_follower = %s"
+                    with connection.cursor() as cursor:
+                        cursor.execute(query, (session['username'], decisionArr[1]))
+                if decisionArr[0] == "0":
+                    query = "DELETE FROM follow WHERE username_followed = %s AND username_follower = %s"
+                    with connection.cursor() as cursor:
+                        cursor.execute(query, (session['username'], decisionArr[1]))
+    return followers()
+
+@app.route("/likeAuth", methods=["POST"])
+def likeAuth():
+    if request.form:
+        requestData = request.form
+        likeValue = requestData["rating"].split("-")
+
+        query = "INSERT INTO likes VALUES (%s, %s, %s, %s)"
+        with connection.cursor() as cursor:
+            cursor.execute(query, (session["username"], likeValue[1], time.strftime('%Y-%m-%d %H:%M:%S'), likeValue[0]))
+    return images()
 
 @app.route("/login", methods=["GET"])
 def login():
@@ -76,7 +151,7 @@ def loginAuth():
     if request.form:
         requestData = request.form
         username = requestData["username"]
-        plaintextPasword = requestData["password"]
+        plaintextPasword = requestData["password"] + SALT
         hashedPassword = hashlib.sha256(plaintextPasword.encode("utf-8")).hexdigest()
 
         with connection.cursor() as cursor:
@@ -98,7 +173,7 @@ def registerAuth():
     if request.form:
         requestData = request.form
         username = requestData["username"]
-        plaintextPasword = requestData["password"]
+        plaintextPasword = requestData["password"] + SALT
         hashedPassword = hashlib.sha256(plaintextPasword.encode("utf-8")).hexdigest()
         firstName = requestData["fname"]
         lastName = requestData["lname"]

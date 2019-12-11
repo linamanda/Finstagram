@@ -1,23 +1,121 @@
 <html>
     <head>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
         <title>Finstagram</title>
     </head>
     <style>
-        figure {
+        .card {
             display: inline-block;
+            vertical-align: text-top;
         }
+
+        #photos {
+            padding-right: 1%;
+            padding-left: 1%;
+        }
+
+        #cardTag, #cardLikes {
+            color: DarkTurquoise;
+            margin: 0;
+        }
+
+        /*If you wanted every image to be the same size */
+        {#.center-cropped {#}
+        {#    object-fit: cover;#}
+        {#    object-position: center;#}
+        {#    height: 300px;#}
+        {#    width: 300px;#}
     </style>
 
     <body>
-        <h1>Image Gallery</h1>
-        <div>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <a class="navbar-brand" href="#">Finstagram</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/home">Home</a>
+                    </li>
+
+                    <li class="nav-item active">
+                        <a class="nav-link" href="/images">View Images</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/upload">Upload an Image</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/follow">Follow</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/followers">Followers</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <div class="jumbotron jumbotron-fluid">
+            <div class="container">
+                <h1 class="display-1 text-center">Image Gallery</h1>
+            </div>
+        </div>
+
+        <div id="photos">
             {% for image in images %}
-                <figure>
-                    <img src="image/{{image.filepath}}" width="300" alt="userimage"/>
-                    <figcaption>ID: {{ image.photoID }}, Posted By: {{ image.photoPoster }} on {{ image.postingdate }}</figcaption>
-                </figure>
+                <div id="photo" class="card text-white bg-dark border-dark mb-3" style="width:300px;">
+                    <img src="image/{{ image.filepath }}" class="card-img-top" alt="userimage">
+                    <div class="card-body">
+                        <small class="text-muted">By: {{ image.firstName }} {{ image.lastName }}
+                                on {{ image.postingdate }}</small>
+                        <br/>
+
+                        <p id="cardTag"><small><small>Tags: </small>{% for tag in tags %}
+                            {% if tag.tagstatus == 1 and image.photoID == tag.photoID %}
+                                <small>@{{ tag.username }} {{ tag.firstName }} {{ tag.lastName }}</small>
+                            {% endif %}
+                        {% endfor %}</small></p>
+                        <p id="cardLikes"><small><small>Liked By: </small>{% for liker in likers %}
+                            {% if image.photoID == liker.photoID %}
+                                <small>@{{ liker.username }}, Rating: {{ liker.rating }} </small> {% endif %}
+                        {% endfor %}</small></p>
+
+                        <p class="card-text">{{ image.caption }}</p>
+
+                        {% set userBool = namespace(value=0) %}
+                        {% for liker in likers %}
+                            {% if image.photoID == liker.photoID and liker.username == session['username'] %}
+                            {% set userBool.value = 1 %}
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if userBool.value == 0 %}
+                            <form action="/likeAuth" method="post">
+                                <select name="rating">
+                                    <option value="1-{{ image.photoID }}">1</option>
+                                    <option value="2-{{ image.photoID }}">2</option>
+                                    <option value="3-{{ image.photoID }}">3</option>
+                                    <option value="4-{{ image.photoID }}">4</option>
+                                    <option value="5-{{ image.photoID }}">5</option>
+                                </select>
+                                <input class="btn btn-primary btn-sm" type="submit" value="Like">
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
             {% endfor %}
         </div>
-        <a href="/">Go back</a>
+
+        <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
     </body>
 </html>

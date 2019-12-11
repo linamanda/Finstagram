@@ -91,6 +91,7 @@ OR ('TestUser' IN (SELECT member_username
                    WHERE (owner_username, groupName) IN (SELECT groupOwner, groupName
                                                          FROM sharedwith
                                                          WHERE photoID = p1.photoID)))
+
 # Query for feature 1
 
 SELECT *
